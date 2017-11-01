@@ -1,0 +1,277 @@
+1.加入Spring
+
+1).加入jar 包
+com.springsource.net.sf.cglib-2.2.0.jar
+com.springsource.org.aopalliance-1.0.0.jar
+com.springsource.org.aspectj.weaver-1.6.8.RELEASE.jar
+commons-logging-1.1.3.jar
+spring-aop-4.0.0.RELEASE.jar
+spring-aspects-4.0.0.RELEASE.jar
+spring-beans-4.0.0.RELEASE.jar
+spring-context-4.0.0.RELEASE.jar
+spring-core-4.0.0.RELEASE.jar
+spring-expression-4.0.0.RELEASE.jar
+spring-jdbc-4.0.0.RELEASE.jar
+spring-orm-4.0.0.RELEASE.jar
+spring-tx-4.0.0.RELEASE.jar
+spring-web-4.0.0.RELEASE.jar
+spring-webmvc-4.0.0.RELEASE.jar
+
+2).配置web.xml
+<context-param>
+	<param-name>contextConfigLocation</param-name>
+	<param-value>classpath:applicationContext*.xml</param-value>
+</context-param>
+
+<listener>
+	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+
+3).加入Spring 的配置文件
+
+
+2.加入Hibernate
+1).同时建立其持久化类，和其对应的.hbm.xml 文件，生成对应的数据表
+2).Spring 整合 Hibernate
+步骤：
+①.加入jar 包
+jboss-logging-3.1.0.GA.jar
+jboss-transaction-api_1.1_spec-1.0.1.Final.jar
+javassist-3.15.0-GA.jar
+hibernate-commons-annotations-4.0.2.Final.jar
+hibernate-core-4.2.4.Final.jar
+hibernate-jpa-2.0-api-1.0.1.Final.jar
+dom4j-1.6.1.jar
+antlr-2.7.7.jar
+
+②.在类路径下加入hibernate.cfg.xml 文件，在其中配置 Hibernate 的基本属性
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+		"-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+		"http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+    	<!-- 配置 hibernate 的基本属性 -->
+    
+    	<!-- 方言 -->
+    	<property name="hibernate.dialect">org.hibernate.dialect.MySQL5InnoDBDialect</property>
+    	
+    	<!-- 是否显示及格式化 SQL -->
+    	<property name="hibernate.show_sql">true</property>
+    	<property name="hibernate.format_sql">false</property>
+    	
+    
+    	<!-- 生成数据表的策略 -->
+    	<property name="hibernate.hbm2ddl.auto">update</property>
+    	
+    	<!-- 二级缓存相关 -->
+    	
+    </session-factory>
+    
+</hibernate-configuration>
+
+③.建立持久化类，和其对应的.hbm.xml 文件
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 2014-7-22 11:21:48 by Hibernate Tools 3.4.0.CR1 -->
+<hibernate-mapping>
+    <class name="xiao.ssh.entities.Employee" table="SSH_EMPLOYEE">
+        
+        <id name="id" type="java.lang.Integer">
+            <column name="ID" />
+            <generator class="native" />
+        </id>
+        
+        <property name="lastName" type="java.lang.String">
+            <column name="LAST_NAME" />
+        </property>
+        
+        <property name="email" type="java.lang.String">
+            <column name="EMAIL" />
+        </property>
+        
+        <property name="birth" type="java.util.Date">
+            <column name="BIRTH" />
+        </property>
+        
+        <property name="createTime" type="java.util.Date">
+            <column name="CREATE_TIME" />
+        </property>
+        
+        <!-- 映射单向 n-1 的关联关系 -->
+        <many-to-one name="department" class="xiao.ssh.entities.Department">
+            <column name="DEPARTMENT_ID" />
+        </many-to-one>
+        
+    </class>
+</hibernate-mapping>
+
+④.和Spring 进行整合
+i.加入c3p0 和mysql 驱动
+c3p0-0.9.1.2.jar
+mysql-connector-java-5.1.7-bin.jar
+
+jdbc.user=root
+jdbc.password=root
+jdbc.driverClass=com.mysql.jdbc.Driver
+jdbc.jdbcUrl=jdbc:mysql://localhost:3306/ssh_curd
+
+jdbc.initPoolSize=5
+jdbc.maxPoolSize=10
+
+ii.从spring 文件中配置：数据源，sessionFactory，声明式事务…
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+	<!-- 导入资源文件 -->
+	<context:property-placeholder location="classpath:db.properties"/>
+	
+	<!-- 配置C3P0 数据源 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<property name="driverClass" value="${jdbc.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+		
+		<property name="initialPoolSize" value="${jdbc.initPoolSize}"></property>
+		<property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+	</bean>
+	
+	<!-- 配置sessionFactory -->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="configLocation" value="classpath:hibernate.cfg.xml"></property>
+		<property name="mappingLocations" value="classpath:xiao/ssh/entities/*.hbm.xml"></property>
+	</bean>
+	
+	<!-- 配置Spring 的声明事务 -->
+	<!-- 1.配置Hibernate 的事务管理器 -->
+	<bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+	<!-- 2.配置事务属性 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="get*" read-only="true"/>
+			<tx:method name="*"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 3.配置事务切入点，再把事务属性和事务切入点关联起来 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* xiao.ssh.service.*.*(..))" id="txPointcut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+	</aop:config>
+
+</beans>
+
+⑤.启动项目，会看到生成对应的数据表
+
+
+3.加入 Struts2
+1) 加入jar 包(若有重复的jar 包，需要把版本低的删除)
+asm-3.3.jar
+asm-commons-3.3.jar
+asm-tree-3.3.jar
+commons-fileupload-1.3.jar
+commons-io-2.0.1.jar
+commons-lang3-3.1.jar
+commons-logging-1.1.3.jar
+freemarker-2.3.19.jar
+javassist-3.15.0-GA.jar
+log4j-1.2.17.jar
+ognl-3.0.6.jar
+struts2-core-2.3.15.3.jar
+xwork-core-2.3.15.3.jar
+
+2) 在web.xml 中配置struts2 的filter
+<filter>
+    <filter-name>struts2</filter-name>
+    <filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>struts2</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+
+3) 加入struts 的配置文件
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+
+    <constant name="struts.enable.DynamicMethodInvocation" value="false" />
+    <constant name="struts.devMode" value="true" />
+
+    <package name="default" namespace="/" extends="struts-default">
+	
+		<!-- 定义新的拦截器栈, 配置 prepare 拦截器栈的 alwaysInvokePrepare 参数值为 false -->
+		<interceptors>
+			<interceptor-stack name="sshStack">
+				<interceptor-ref name="paramsPrepareParamsStack">
+					<param name="prepare.alwaysInvokePrepare">false</param>
+				</interceptor-ref>
+			</interceptor-stack>
+		</interceptors>
+		
+		<!-- 使用新的拦截器栈 -->
+		<default-interceptor-ref name="sshStack"></default-interceptor-ref>
+	
+        <action name="emp-*" class="employeeAction"
+        	method="{1}">
+        	<result name="list">/WEB-INF/views/emp-list.jsp</result>
+        	<result type="stream" name="ajax-success">
+		        <param name="contentType">text/html</param>
+		        <param name="inputName">inputStream</param>
+		    </result>	
+		    <result name="input">/WEB-INF/views/emp-input.jsp</result>
+		    <result name="success" type="redirect">/emp-list</result>
+        </action>
+        	
+    </package>
+
+</struts>
+
+
+4) 整合spring
+①.加入struts2 的spring 的插件的jar 包
+struts2-spring-plugin-2.3.15.3.jar
+
+②.在spring 的配置文件中正常配置Action， 注意Action 的scope 为prototype
+③.在struts2 的配置文件中配置Action时，class 属性指向该Action 在IOC 的id
+
+
+4.完成功能
+
+1)、获取所有员工信息。若在Dao 中只查询Employee 的信息，而且Employee 和Department 使用的还是懒加载，页面上
+还需要显示部门信息，此时会出现懒加载异常，代理对象不能被初始化；
+解决方法：
+①.打开懒加载，不推荐使用
+②.获取Employee 时使用 迫切左外连接同时初始化其关联的Department 对象。
+③.使用openSessionInViewFilter: 后面再说。
+
+2)、删除员工信息
+①.正常删除，返回值需要时redirect 类型，而且重定向到emp-list
+②.确定要删除吗？使用jQuery 和 ajax 操作。
+
+3)、新建显示页面
+①.显示表单页面：需要查询所有的部门信息
+②.使用struts2 的ModelDriven 和Preparable 的拦截器
+③.时间是一个字符串，需要转换成一个Date 类型的对象。
+
+4)、修改信息
+①.lastName 不能编辑
+②.birth, createTime 按指定时间格式显示
